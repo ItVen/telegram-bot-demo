@@ -1,6 +1,13 @@
 import TelegramBot, { InlineQueryResult } from "node-telegram-bot-api";
 import "dotenv/config";
 
+// 模拟存储 Web 应用的数据
+interface WebApp {
+  id: number;
+  name: string;
+  url: string;
+}
+
 // 确保环境变量被正确加载
 const token = process.env.TOKEN || "";
 if (!token) {
@@ -13,44 +20,48 @@ if (!token) {
 // 创建一个bot实例
 const bot = new TelegramBot(token, { polling: true });
 
+let webApps: WebApp[] = [];
+let nextId = 1;
+
 // 监听 /start 消息
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "This is aven's Telegram bot!");
+  bot.sendMessage(chatId, "欢迎使用 Telegram Bot！");
 });
 
 bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
   const helpMessage = `
-    Available commands:
-    /start - Start the bot
-    /help - Get help
-    /echo - Echo back your message
-    /pic - Send a picture
-    `;
+    可用命令:
+    /start - 开始与 Bot 的对话
+    /help - 获取可用命令列表和帮助信息
+    /about - 查看 Bot 的简介和详细信息
+    /settings - 配置和查看 Bot 的设置
+    /profile - 查看或编辑用户个人资料
+    /stats - 获取 Bot 的使用统计信息
+    /feedback - 提交反馈或建议
+    /contact - 获取联系信息或支持
+    /news - 获取最新的新闻更新
+    /subscribe - 订阅每日更新
+    /unsubscribe - 取消订阅
+    /myapps - 编辑你的 Web 应用
+    /newapp - 创建一个新的 Web 应用
+    /listapps - 获取你的 Web 应用列表
+    /editapp - 编辑一个 Web 应用
+    /deleteapp - 删除一个 Web 应用
+  `;
   bot.sendMessage(chatId, helpMessage);
 });
 
-bot.onText(/\/echo (.+)/, (msg, match) => {
+// 监听用户消息并回复
+bot.on("message", (msg) => {
   const chatId = msg.chat.id;
-  const resp = match ? match[1] : "";
-  bot.sendMessage(chatId, resp);
+  if (msg.text && !msg.text.startsWith("/")) {
+    bot.sendMessage(chatId, `您发送了: ${msg.text}`);
+  }
 });
 
-// 监听 /buttons 消息
-bot.onText(/\/buttons/, (msg) => {
-  const chatId = msg.chat.id;
-  const options = {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "Button 1", callback_data: "1" }],
-        [{ text: "Button 2", callback_data: "2" }],
-      ],
-    },
-  };
-  bot.sendMessage(chatId, "Choose an option:", options);
-});
-
+// 监听回调查询
 bot.on("callback_query", (callbackQuery) => {
   const message = callbackQuery.message;
   const data = callbackQuery.data;
@@ -60,21 +71,115 @@ bot.on("callback_query", (callbackQuery) => {
   }
 });
 
-bot.onText(/\/location/, (msg) => {
+// 发送自定义键盘
+bot.onText(/\/keyboard/, (msg) => {
   const chatId = msg.chat.id;
-  const latitude = 40.73061;
-  const longitude = -73.935242;
-  bot.sendLocation(chatId, latitude, longitude);
+  const options = {
+    reply_markup: {
+      keyboard: [[{ text: "按钮1" }, { text: "按钮2" }], [{ text: "按钮3" }]],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    },
+  };
+  bot.sendMessage(chatId, "请选择一个选项:", options);
 });
 
-bot.on("photo", (msg) => {
+// 设置内联键盘
+bot.onText(/\/inline/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "Nice photo!");
+  const options = {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "内联按钮1", callback_data: "1" }],
+        [{ text: "内联按钮2", callback_data: "2" }],
+      ],
+    },
+  };
+  bot.sendMessage(chatId, "选择一个内联选项:", options);
+});
+
+// 监听 /news 命令，模拟发送新闻更新
+bot.onText(/\/news/, (msg) => {
+  const chatId = msg.chat.id;
+  const news = `
+    今日新闻：
+    1. 新闻标题1
+    2. 新闻标题2
+    3. 新闻标题3
+  `;
+  bot.sendMessage(chatId, news);
+});
+
+// 创建新的 Web 应用
+bot.onText(/\/newapp (.+)/, (msg, match) => {
+  const chatId = msg.chat.id;
+  const [name, url] = match ? match[1].split(" ") : [];
+
+  if (!name || !url) {
+    bot.sendMessage(chatId, "使用方法: /newapp <name> <url>");
+    return;
+  }
+
+  const newApp: WebApp = { id: nextId++, name, url };
+  webApps.push(newApp);
+  bot.sendMessage(chatId, `已创建 Web 应用: ${name} (${url})`);
+});
+
+// 列出所有 Web 应用
+bot.onText(/\/listapps/, (msg) => {
+  const chatId = msg.chat.id;
+
+  if (webApps.length === 0) {
+    bot.sendMessage(chatId, "你还没有任何 Web 应用。");
+    return;
+  }
+
+  const appList = webApps
+    .map((app) => `${app.id}. ${app.name} (${app.url})`)
+    .join("\n");
+  bot.sendMessage(chatId, `你的 Web 应用列表:\n${appList}`);
+});
+
+// 编辑 Web 应用
+bot.onText(/\/editapp (\d+) (.+)/, (msg, match) => {
+  const chatId = msg.chat.id;
+  const appId = parseInt(match ? match[1] : "", 10);
+  const [newName, newUrl] = match ? match[2].split(" ") : [];
+
+  const appIndex = webApps.findIndex((app) => app.id === appId);
+
+  if (appIndex === -1) {
+    bot.sendMessage(chatId, "找不到该 Web 应用。");
+    return;
+  }
+
+  if (!newName || !newUrl) {
+    bot.sendMessage(chatId, "使用方法: /editapp <id> <new_name> <new_url>");
+    return;
+  }
+
+  webApps[appIndex] = { id: appId, name: newName, url: newUrl };
+  bot.sendMessage(chatId, `已更新 Web 应用: ${newName} (${newUrl})`);
+});
+
+// 删除 Web 应用
+bot.onText(/\/deleteapp (\d+)/, (msg, match) => {
+  const chatId = msg.chat.id;
+  const appId = parseInt(match ? match[1] : "", 10);
+
+  const appIndex = webApps.findIndex((app) => app.id === appId);
+
+  if (appIndex === -1) {
+    bot.sendMessage(chatId, "找不到该 Web 应用。");
+    return;
+  }
+
+  webApps.splice(appIndex, 1);
+  bot.sendMessage(chatId, `已删除 Web 应用 ID: ${appId}`);
 });
 
 // 处理内联查询
 bot.on("inline_query", async (inlineQuery) => {
-  console.log("Received inline query:", inlineQuery);
   const queryText: string = inlineQuery.query;
 
   if (queryText.length > 0) {
@@ -90,8 +195,7 @@ bot.on("inline_query", async (inlineQuery) => {
       },
     ];
 
-    let data = await bot.answerInlineQuery(inlineQuery.id, results);
-    console.log("answerInlineQuery:", data);
+    await bot.answerInlineQuery(inlineQuery.id, results);
   }
 });
 
