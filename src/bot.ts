@@ -1,8 +1,14 @@
-import TelegramBot from "node-telegram-bot-api";
+import TelegramBot, { InlineQueryResult } from "node-telegram-bot-api";
 import "dotenv/config";
 
-// 替换成你的 Bot Token
+// 确保环境变量被正确加载
 const token = process.env.TOKEN || "";
+if (!token) {
+  console.error(
+    "Bot token not provided. Please set the TOKEN environment variable."
+  );
+  process.exit(1);
+}
 
 // 创建一个bot实例
 const bot = new TelegramBot(token, { polling: true });
@@ -31,12 +37,7 @@ bot.onText(/\/echo (.+)/, (msg, match) => {
   bot.sendMessage(chatId, resp);
 });
 
-// 监听任意消息
-bot.on("message", (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, `You said: ${msg.text}`);
-});
-
+// 监听 /buttons 消息
 bot.onText(/\/buttons/, (msg) => {
   const chatId = msg.chat.id;
   const options = {
@@ -69,6 +70,33 @@ bot.onText(/\/location/, (msg) => {
 bot.on("photo", (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, "Nice photo!");
+});
+
+// 处理内联查询
+bot.on("inline_query", async (inlineQuery) => {
+  console.log("Received inline query:", inlineQuery);
+  const queryText: string = inlineQuery.query;
+
+  if (queryText.length > 0) {
+    const results: InlineQueryResult[] = [
+      {
+        type: "article",
+        id: "1",
+        title: "Hello",
+        description: "My first inline bot",
+        input_message_content: {
+          message_text: "Hello, world!",
+        },
+      },
+    ];
+
+    let data = await bot.answerInlineQuery(inlineQuery.id, results);
+    console.log("answerInlineQuery:", data);
+  }
+});
+
+bot.on("polling_error", (error) => {
+  console.error("Polling error:", error);
 });
 
 console.log("Bot is running...");
