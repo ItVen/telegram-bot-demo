@@ -54,10 +54,41 @@ bot.onText(/\/help/, (msg) => {
 });
 
 // 监听用户消息并回复
-bot.on("message", (msg) => {
+bot.on("message", (msg: TelegramBot.Message) => {
   const chatId = msg.chat.id;
   if (msg.text && !msg.text.startsWith("/")) {
     bot.sendMessage(chatId, `您发送了: ${msg.text}`);
+  }
+
+  // 如果消息内容是 "/kickme"，则踢出发送该消息的成员
+  if (msg.text && msg.text.toLowerCase() === "/kickme") {
+    const userId = (msg.from as TelegramBot.User).id;
+    bot
+      .banChatMember(chatId, userId)
+      .then(() => {
+        bot.sendMessage(
+          chatId,
+          `用户 ${(msg.from as TelegramBot.User).first_name} 已被封禁。`
+        );
+      })
+      .catch((error) => {
+        bot.sendMessage(chatId, `无法封禁用户：${error.message}`);
+      });
+  }
+
+  if (msg.text && msg.text.toLowerCase() === "/unbanme") {
+    const userId = (msg.from as TelegramBot.User).id;
+    bot
+      .unbanChatMember(chatId, userId)
+      .then(() => {
+        bot.sendMessage(
+          chatId,
+          `用户 ${(msg.from as TelegramBot.User).first_name} 的封禁已被取消。`
+        );
+      })
+      .catch((error) => {
+        bot.sendMessage(chatId, `无法取消用户的封禁：${error.message}`);
+      });
   }
 });
 
@@ -202,5 +233,43 @@ bot.on("inline_query", async (inlineQuery) => {
 bot.on("polling_error", (error) => {
   console.error("Polling error:", error);
 });
+
+// 监听群组中的新成员加入事件
+bot.on("new_chat_members", (msg) => {
+  const chatId = msg.chat.id;
+  const newMembers = msg.new_chat_members;
+  if (newMembers) {
+    newMembers.forEach((member) => {
+      const welcomeMessage = `欢迎 ${member.first_name} 加入群组！`;
+      bot.sendMessage(chatId, welcomeMessage);
+    });
+  }
+});
+
+// 监听群组中的命令
+bot.onText(/\/promote (\d+)/, (msg, match) => {
+  if (match) {
+    const chatId = msg.chat.id;
+    const userId = parseInt(match[1]);
+
+    bot
+      .promoteChatMember(chatId, userId, {
+        can_change_info: true,
+        can_delete_messages: true,
+        can_invite_users: true,
+        can_restrict_members: true,
+        can_pin_messages: true,
+        can_promote_members: true,
+      })
+      .then(() => {
+        bot.sendMessage(chatId, `用户 ${userId} 已被提升为管理员。`);
+      })
+      .catch((error) => {
+        bot.sendMessage(chatId, `无法提升用户为管理员：${error.message}`);
+      });
+  }
+});
+
+ 
 
 console.log("Bot is running...");
