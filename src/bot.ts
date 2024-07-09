@@ -1,5 +1,12 @@
 import TelegramBot, { InlineQueryResult } from "node-telegram-bot-api";
 import "dotenv/config";
+import { containsBTCAddress, containsEVMAddress } from "./tool";
+import {
+  monitorMessage,
+  pingChatMessage,
+  sentAiMessage,
+  sentCopyMessage,
+} from "./bot-message";
 
 // 模拟存储 Web 应用的数据
 interface WebApp {
@@ -7,7 +14,8 @@ interface WebApp {
   name: string;
   url: string;
 }
-
+// 存储 Bot 加入的群组列表
+const groups = new Set<number>();
 // 确保环境变量被正确加载
 const token = process.env.TOKEN || "";
 if (!token) {
@@ -54,42 +62,45 @@ bot.onText(/\/help/, (msg) => {
 });
 
 // 监听用户消息并回复
-bot.on("message", (msg: TelegramBot.Message) => {
+bot.on("message", async (msg: TelegramBot.Message) => {
+  // monitorMessage(msg);
+  // sentCopyMessage(bot, msg);
+  // pingChatMessage(bot, msg);
+  await sentAiMessage(bot, msg);
+});
+
+bot.on("kickme", (callbackQuery) => {
+  const msg = callbackQuery.message;
   const chatId = msg.chat.id;
-  if (msg.text && !msg.text.startsWith("/")) {
-    bot.sendMessage(chatId, `您发送了: ${msg.text}`);
-  }
+  const userId = (msg.from as TelegramBot.User).id;
+  bot
+    .banChatMember(chatId, userId)
+    .then(() => {
+      bot.sendMessage(
+        chatId,
+        `用户 ${(msg.from as TelegramBot.User).first_name} 已被封禁。`
+      );
+    })
+    .catch((error) => {
+      bot.sendMessage(chatId, `无法封禁用户：${error.message}`);
+    });
+});
 
-  // 如果消息内容是 "/kickme"，则踢出发送该消息的成员
-  if (msg.text && msg.text.toLowerCase() === "/kickme") {
-    const userId = (msg.from as TelegramBot.User).id;
-    bot
-      .banChatMember(chatId, userId)
-      .then(() => {
-        bot.sendMessage(
-          chatId,
-          `用户 ${(msg.from as TelegramBot.User).first_name} 已被封禁。`
-        );
-      })
-      .catch((error) => {
-        bot.sendMessage(chatId, `无法封禁用户：${error.message}`);
-      });
-  }
-
-  if (msg.text && msg.text.toLowerCase() === "/unbanme") {
-    const userId = (msg.from as TelegramBot.User).id;
-    bot
-      .unbanChatMember(chatId, userId)
-      .then(() => {
-        bot.sendMessage(
-          chatId,
-          `用户 ${(msg.from as TelegramBot.User).first_name} 的封禁已被取消。`
-        );
-      })
-      .catch((error) => {
-        bot.sendMessage(chatId, `无法取消用户的封禁：${error.message}`);
-      });
-  }
+bot.on("unbanme", (callbackQuery) => {
+  const msg = callbackQuery.message;
+  const chatId = msg.chat.id;
+  const userId = (msg.from as TelegramBot.User).id;
+  bot
+    .unbanChatMember(chatId, userId)
+    .then(() => {
+      bot.sendMessage(
+        chatId,
+        `用户 ${(msg.from as TelegramBot.User).first_name} 的封禁已被取消。`
+      );
+    })
+    .catch((error) => {
+      bot.sendMessage(chatId, `无法取消用户的封禁：${error.message}`);
+    });
 });
 
 // 监听回调查询
