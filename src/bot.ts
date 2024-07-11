@@ -41,6 +41,7 @@ export const runBot = () => {
     可用命令:
     /start - 开始与 Bot 的对话
     /help - 获取可用命令列表和帮助信息
+    /auth - 用于用户授权
     /about - 查看 Bot 的简介和详细信息
     /settings - 配置和查看 Bot 的设置
     /profile - 查看或编辑用户个人资料
@@ -287,6 +288,17 @@ export const runBot = () => {
           bot.sendMessage(chatId, `无法提升用户为管理员：${error.message}`);
         });
     }
+  });
+
+  // 处理 /auth 命令，用于用户授权
+  bot.onText(/\/auth/, (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from?.id;
+    const userName = msg.from?.first_name;
+
+    // 假设在此进行用户授权逻辑
+    // 例如将用户 ID 存储到数据库或验证用户信息
+    bot.sendMessage(chatId, `You are authorized, ${userName}!`);
   });
 
   console.log("Bot is running...");

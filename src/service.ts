@@ -42,20 +42,27 @@ app.get("/auth/telegram", (req, res) => {
     // 用户通过验证，处理用户信息
     const userId = query.id;
     const username = query.username;
-    res.send(`Hello, ${username}! Your Telegram ID is ${userId}.`);
+    const first_name = query.first_name;
+    res.redirect(`/welcome?username=${username}&first_name=${first_name}`);
   } else {
-    res.status(401).send("Unauthorized");
+    res.redirect("/error");
   }
 });
 
-app.post("/auth/telegram", (req, res) => {
-  const query = req.query;
-  console.log(query);
-  res.status(200).send("ok");
+app.get("/welcome", (req, res) => {
+  const { username, first_name } = req.query;
+  res.send(`<h1>Welcome ${first_name} (@${username})!</h1>`);
+});
+app.get("/error", (req, res) => {
+  res.send("<h1>Authentication Failed</h1>");
 });
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../page/index.html"));
+});
+
+app.get("/app", (req, res) => {
+  res.sendFile(path.join(__dirname, "../page/app.html"));
 });
 // 启动服务器
 const PORT = process.env.PORT || 3000;
