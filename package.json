@@ -8,7 +8,9 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc && node dist/service.js",
-    "client": "tsc && node dist/client.service.js"
+    "client": "tsc && node dist/client.service.js",
+    "folder": "tsc && node dist/client.folder.service.js",
+    "admin": "tsc && node dist/client.admin.js"
   },
   "dependencies": {
     "@types/node": "^20.14.10",
