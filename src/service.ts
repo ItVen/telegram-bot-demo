@@ -60,9 +60,8 @@ app.get("/error", (req, res) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../page/index.html"));
 });
-
 app.get("/app", (req, res) => {
-  res.sendFile(path.join(__dirname, "../page/app.html"));
+  res.sendFile(path.join(__dirname, "../page/index.html"));
 });
 // 启动服务器
 const PORT = process.env.PORT || 3000;

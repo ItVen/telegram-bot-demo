@@ -42,6 +42,7 @@ export const runBot = () => {
     /start - 开始与 Bot 的对话
     /help - 获取可用命令列表和帮助信息
     /auth - 用于用户授权
+    /open - 打开一个min_web
     /about - 查看 Bot 的简介和详细信息
     /settings - 配置和查看 Bot 的设置
     /profile - 查看或编辑用户个人资料
@@ -58,6 +59,24 @@ export const runBot = () => {
     /deleteapp - 删除一个 Web 应用
   `;
     bot.sendMessage(chatId, helpMessage);
+  });
+  bot.onText(/\/open/, (msg) => {
+    const chatId = msg.chat.id;
+
+    const mainMenu = {
+      inline_keyboard: [
+        [
+          {
+            text: "Open",
+            web_app: { url: "https://bot-demo-hazel.vercel.app/" },
+          },
+        ],
+      ],
+    };
+
+    bot.sendMessage(chatId, "Click the button below to open the web app:", {
+      reply_markup: mainMenu,
+    });
   });
 
   bot.on("new_chat_members", (msg) => {
