@@ -6,8 +6,8 @@ import bigInt from "big-integer";
 import fs from 'fs';
 import path from "path";
 // 从 https:/ / my.telegram.org 获取
-const apiId = process.env.YOUR_API_ID as any as number;
-const apiHash = process.env.YOUR_API_HASH as string;
+const apiId = process.env.API_ID as any as number;
+const apiHash = process.env.API_HASH as string;
 const sessionFilePath = path.resolve(__dirname, 'session.json');
 let sessionData = "";
 if (fs.existsSync(sessionFilePath)) {
@@ -42,13 +42,11 @@ async function run() {
   const sessionStr = stringSession.save();
   fs.writeFileSync(sessionFilePath, sessionStr);
   // 发送一条消息到某个聊天
-  await client.sendMessage("me", { message: "Hello, this is a test message!" });
+  // await client.sendMessage("me", { message: "Hello, this is a test message!" });
 
   const me = await client.invoke(new Api.users.GetFullUser({
     id: await client.getInputEntity('me')
   }));
-  console.log(me)
-
   // 获取最近的对话列表
   try {
     const result = await client.invoke(new Api.messages.GetDialogs({
@@ -58,7 +56,6 @@ async function run() {
       limit: 10,
       hash: bigInt(0)
     }));
-    console.log(result);
   } catch (error) {
     console.error('Failed to get dialogs:', error);
   }
@@ -86,12 +83,10 @@ async function run() {
     minId: 0,
     hash: bigInt(0)
   }));
-  console.log(history)
 
   const user = await client.invoke(new Api.users.GetFullUser({
     id: await client.getInputEntity('avendemobot')
   }));
-  console.log(user);
 
   await client.invoke(new Api.channels.LeaveChannel({
     channel: await client.getInputEntity('tonkeeper_news')
@@ -100,6 +95,72 @@ async function run() {
   await client.invoke(new Api.channels.JoinChannel({
     channel: await client.getInputEntity('tonkeeper_news')
   }));
+
+  // 获取对话列表
+  const dialogs = await client.invoke(new Api.messages.GetDialogs({
+    offsetDate: 0,
+    offsetId: 0,
+    offsetPeer: new Api.InputPeerSelf(),
+    limit: 100,
+    hash: bigInt(0)
+  }));
+
+  const channels: Api.Channel[] = [];
+  const bots: Api.User[] = [];
+  const users: Api.User[] = [];
+  const folderMap = new Map(); // 文件夹ID和名称的映射
+
+  if ('chats' in dialogs) {
+    for (const chat of dialogs.chats) {
+      if (chat instanceof Api.Channel) {
+        channels.push(chat);
+      } else if (chat instanceof Api.User) {
+        if ((chat as Api.User).bot) {
+          bots.push(chat);
+        } else {
+          users.push(chat);
+        }
+      } else if (chat instanceof Api.Chat) {
+      } else {
+      }
+    }
+  } else {
+    console.error("Unexpected response format:", dialogs);
+  }
+  // 获取文件夹信息
+  if ('dialogs' in dialogs) {
+    for (const dialog of dialogs.dialogs) {
+      if ((dialog as any).folderId) {
+        console.log(dialog)
+        folderMap.set((dialog as any).folderId, (dialog as any).folderTitle);
+      }
+    }
+
+  }
+
+
+  // console.log("Channels:", channels.map(c => c.title));
+  // console.log("Bots:", bots.map(b => b.username));
+  // console.log("Users:", users.map(u => u.username));
+  console.log("Folders:", Array.from(folderMap.entries()).map(([id, title]) => ({ id, title })));
+
+  // 创建“收藏”文件夹并添加对话
+  // await client.invoke(new Api.folders.EditPeerFolders({
+  //   folderPeers: channels.map(chat => {
+  //     console.log({ chat })
+  //     let peer = new Api.InputPeerChannel({
+  //       channelId: chat.id,
+  //       accessHash: chat.accessHash ?? bigInt(0),
+  //     });
+  //     return new Api.InputFolderPeer({
+  //       folderId: 1, // 文件夹 ID，需要唯一
+  //       peer: peer,
+  //     });
+  //   })
+  // }));
+
+  // console.log("Selected chats added to '收藏' folder.");
+
 }
 
 // 运行客户端
