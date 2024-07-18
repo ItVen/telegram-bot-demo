@@ -1,12 +1,7 @@
 import TelegramBot, { InlineQueryResult } from "node-telegram-bot-api";
 import "dotenv/config";
-import { containsBTCAddress, containsEVMAddress } from "./tool";
-import {
-  monitorMessage,
-  pingChatMessage,
-  sentAiMessage,
-  sentCopyMessage,
-} from "./bot-message";
+import { sentCopyMessage } from "./bot-message";
+import { walletBot } from "./wallet-bot";
 
 // 模拟存储 Web 应用的数据
 interface WebApp {
@@ -43,7 +38,7 @@ export const runBot = () => {
     /help - 获取可用命令列表和帮助信息
     /auth - 用于用户授权
     /open - 打开一个min_web
-    /about - 查看 Bot 的简介和详细信息
+    /connect - connet wallet
     /settings - 配置和查看 Bot 的设置
     /profile - 查看或编辑用户个人资料
     /stats - 获取 Bot 的使用统计信息
@@ -60,6 +55,7 @@ export const runBot = () => {
   `;
     bot.sendMessage(chatId, helpMessage);
   });
+
   bot.onText(/\/open/, (msg) => {
     const chatId = msg.chat.id;
 
@@ -92,9 +88,9 @@ export const runBot = () => {
   // 监听用户消息并回复
   bot.on("message", async (msg: TelegramBot.Message) => {
     // monitorMessage(msg);
-    // sentCopyMessage(bot, msg);
+    sentCopyMessage(bot, msg);
     // pingChatMessage(bot, msg);
-    await sentAiMessage(bot, msg);
+    // await sentAiMessage(bot, msg);
   });
 
   bot.on("kickme", (callbackQuery) => {
@@ -320,5 +316,6 @@ export const runBot = () => {
     bot.sendMessage(chatId, `You are authorized, ${userName}!`);
   });
 
+  walletBot(bot);
   console.log("Bot is running...");
 };
