@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import crypto from "crypto";
 import { runBot } from "./bot";
 import path from "path";
+import webApp from "@twa-dev/sdk";
 
 const app = express();
 const botToken = process.env.TOKEN || "";
@@ -21,6 +22,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // 验证 Telegram 传递的哈希值
 const checkSignature = (query: any): boolean => {
+  console.log("checkSignature", query);
   const hash = query.hash;
   const dataCheckString = Object.keys(query)
     .filter((key) => key !== "hash")
@@ -31,6 +33,7 @@ const checkSignature = (query: any): boolean => {
     .createHmac("sha256", secret)
     .update(dataCheckString)
     .digest("hex");
+  console.log({ hmac, hash });
   return hmac === hash;
 };
 
@@ -51,7 +54,60 @@ app.get("/auth/telegram", (req, res) => {
 
 app.get("/welcome", (req, res) => {
   const { username, first_name } = req.query;
-  res.send(`<h1>Welcome ${first_name} (@${username})!</h1>`);
+
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Welcome</title>
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+      </head>
+      <body>
+        <h1>Welcome, ${first_name}!</h1>
+        <div id="telegram-info"></div>
+        <script>
+          (function() {
+            try {
+              console.log("=============webApp 0======");
+              const tg = window.Telegram.WebApp;
+              console.log("tg:", tg);
+              const initDataUnsafe = tg.initDataUnsafe; // 解析后的初始数据（包含用户信息）
+              console.log("initDataUnsafe:", initDataUnsafe);
+              const initData =  tg.initData;
+               console.log("=============initData 0======");
+              console.log("initDataUnsafe:", initData);
+
+              // Display user info in the HTML
+              const user = initDataUnsafe.user || {};
+              const userInfo = JSON.stringify(user, null, 2);
+              document.getElementById('telegram-info').innerText = userInfo;
+            } catch (error) {
+              console.error("Error initializing Telegram Web App:", error);
+              document.getElementById('telegram-info').innerText = 'Error retrieving Telegram data.';
+            }
+          })();
+        </script>
+      </body>
+    </html>
+  `;
+
+  res.send(htmlContent);
+});
+
+app.get("/demo", (req, res) => {
+  const scriptPath = "../dist/bundle.js";
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Welcome</title>
+      </head>
+      <body>
+        <h1>Welcome !</h1>
+        <script src="${scriptPath}"></script>
+      </body>
+    </html>
+  `;
+
+  res.send(htmlContent);
 });
 app.get("/error", (req, res) => {
   res.send("<h1>Authentication Failed</h1>");
@@ -62,6 +118,10 @@ app.get("/", (req, res) => {
 });
 app.get("/app", (req, res) => {
   res.sendFile(path.join(__dirname, "../page/index.html"));
+});
+
+app.get("/hello", (req, res) => {
+  res.sendFile(path.join(__dirname, "../page/test.html"));
 });
 // 启动服务器
 const PORT = process.env.PORT || 3000;
