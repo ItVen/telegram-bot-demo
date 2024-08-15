@@ -53,17 +53,16 @@ app.get("/auth/telegram", (req, res) => {
 });
 
 app.get("/welcome", (req, res) => {
-  const { username, first_name } = req.query;
-
   const htmlContent = `
     <html>
       <head>
         <title>Welcome</title>
         <script src="https://telegram.org/js/telegram-web-app.js"></script>
       </head>
-      <body>
-        <h1>Welcome, ${first_name}!</h1>
+      <body> 
+        <h1>Welcome!</h1>
         <div id="telegram-info"></div>
+        <div id="route-params"></div>
         <script>
           (function() {
             try {
@@ -79,7 +78,9 @@ app.get("/welcome", (req, res) => {
               // Display user info in the HTML
               const user = initDataUnsafe.user || {};
               const userInfo = JSON.stringify(user, null, 2);
-              document.getElementById('telegram-info').innerText = userInfo;
+              document.getElementById('telegram-info').innerText = userInfo; 
+              const urlParams = new URLSearchParams(window.location.search); 
+              document.getElementById('route-params').innerText = urlParams;
             } catch (error) {
               console.error("Error initializing Telegram Web App:", error);
               document.getElementById('telegram-info').innerText = 'Error retrieving Telegram data.';
