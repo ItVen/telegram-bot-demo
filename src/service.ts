@@ -63,6 +63,52 @@ app.get("/welcome", (req, res) => {
         <h1>Welcome!</h1>
         <div id="telegram-info"></div>
         <div id="route-params"></div>
+         <button id="goto-demo">Go to Demo</button>
+        <script>
+          (function() {
+            try {
+              console.log("=============webApp 0======");
+              const tg = window.Telegram.WebApp;
+              console.log("tg:", tg);
+              const initDataUnsafe = tg.initDataUnsafe; // 解析后的初始数据（包含用户信息）
+              console.log("initDataUnsafe:", initDataUnsafe);
+              const initData =  tg.initData;
+               console.log("=============initData 0======");
+              console.log("initDataUnsafe:", initData);
+
+              // Display user info in the HTML
+              const user = initDataUnsafe.user || {};
+              const userInfo = JSON.stringify(user, null, 2);
+              document.getElementById('telegram-info').innerText = userInfo; 
+              const urlParams = new URLSearchParams(window.location.search); 
+              document.getElementById('route-params').innerText = urlParams;
+                document.getElementById('goto-demo').addEventListener('click', function() {
+                window.location.href = 'https://bot-demo-hazel.vercel.app/demo?blink=https%3A%2F%2Fjup.ag%2Fswap%2FSOL-MEW';
+              });
+            } catch (error) {
+              console.error("Error initializing Telegram Web App:", error);
+              document.getElementById('telegram-info').innerText = 'Error retrieving Telegram data.';
+            }
+          })();
+        </script>
+      </body>
+    </html>
+  `;
+
+  res.send(htmlContent);
+});
+
+app.get("/demo", (req, res) => {
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Welcome</title>
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+      </head>
+      <body> 
+        <h1>Welcome!</h1>
+        <div id="telegram-info"></div>
+        <div id="route-params"></div>
         <script>
           (function() {
             try {
@@ -93,23 +139,8 @@ app.get("/welcome", (req, res) => {
 
   res.send(htmlContent);
 });
-
-app.get("/demo", (req, res) => {
-  const scriptPath = "../dist/bundle.js";
-  const htmlContent = `
-    <html>
-      <head>
-        <title>Welcome</title>
-      </head>
-      <body>
-        <h1>Welcome !</h1>
-        <script src="${scriptPath}"></script>
-      </body>
-    </html>
-  `;
-
-  res.send(htmlContent);
-});
+ 
+ 
 app.get("/error", (req, res) => {
   res.send("<h1>Authentication Failed</h1>");
 });
