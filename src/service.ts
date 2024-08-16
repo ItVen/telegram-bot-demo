@@ -53,6 +53,7 @@ app.get("/auth/telegram", (req, res) => {
 });
 
 app.get("/welcome", (req, res) => {
+  const targetAppUrl = `https://t.me/avendemobot/demo?startapp=1222`;
   const htmlContent = `
     <html>
       <head>
@@ -63,27 +64,26 @@ app.get("/welcome", (req, res) => {
         <h1>Welcome!</h1>
         <div id="telegram-info"></div>
         <div id="route-params"></div>
-         <button id="goto-demo">Go to Demo</button>
+        <button id="open-another-app">Open Another Mini App</button>
         <script>
           (function() {
             try {
-              console.log("=============webApp 0======");
               const tg = window.Telegram.WebApp;
-              console.log("tg:", tg);
+              console.log(tg)
               const initDataUnsafe = tg.initDataUnsafe; // 解析后的初始数据（包含用户信息）
-              console.log("initDataUnsafe:", initDataUnsafe);
-              const initData =  tg.initData;
-               console.log("=============initData 0======");
-              console.log("initDataUnsafe:", initData);
 
-              // Display user info in the HTML
+              // 显示用户信息
               const user = initDataUnsafe.user || {};
               const userInfo = JSON.stringify(user, null, 2);
-              document.getElementById('telegram-info').innerText = userInfo; 
-              const urlParams = new URLSearchParams(window.location.search); 
-              document.getElementById('route-params').innerText = urlParams;
-                document.getElementById('goto-demo').addEventListener('click', function() {
-                window.location.href = 'https://bot-demo-hazel.vercel.app/demo?blink=https%3A%2F%2Fjup.ag%2Fswap%2FSOL-MEW';
+              document.getElementById('telegram-info').innerText = userInfo;
+
+              // 显示当前页面的 URL 参数（如果有的话）
+              const urlParams = new URLSearchParams(window.location.search);
+              document.getElementById('route-params').innerText = JSON.stringify(Object.fromEntries(urlParams.entries()), null, 2);
+
+              // 设置按钮点击事件，跳转到目标小程序页面
+              document.getElementById('open-another-app').addEventListener('click', function() {
+                tg.openTelegramLink("${targetAppUrl}"); 
               });
             } catch (error) {
               console.error("Error initializing Telegram Web App:", error);
@@ -94,7 +94,6 @@ app.get("/welcome", (req, res) => {
       </body>
     </html>
   `;
-
   res.send(htmlContent);
 });
 
@@ -102,7 +101,7 @@ app.get("/demo", (req, res) => {
   const htmlContent = `
     <html>
       <head>
-        <title>Welcome</title>
+        <title>Demo</title>
         <script src="https://telegram.org/js/telegram-web-app.js"></script>
       </head>
       <body> 
@@ -112,21 +111,17 @@ app.get("/demo", (req, res) => {
         <script>
           (function() {
             try {
-              console.log("=============webApp 0======");
               const tg = window.Telegram.WebApp;
-              console.log("tg:", tg);
+              console.log(tg)
               const initDataUnsafe = tg.initDataUnsafe; // 解析后的初始数据（包含用户信息）
-              console.log("initDataUnsafe:", initDataUnsafe);
-              const initData =  tg.initData;
-               console.log("=============initData 0======");
-              console.log("initDataUnsafe:", initData);
 
-              // Display user info in the HTML
+              // 显示用户信息
               const user = initDataUnsafe.user || {};
               const userInfo = JSON.stringify(user, null, 2);
               document.getElementById('telegram-info').innerText = userInfo; 
-              const urlParams = new URLSearchParams(window.location.search); 
-              document.getElementById('route-params').innerText = urlParams;
+              const urlParams = new URLSearchParams(window.location.search);
+              document.getElementById('route-params').innerText = urlParams
+
             } catch (error) {
               console.error("Error initializing Telegram Web App:", error);
               document.getElementById('telegram-info').innerText = 'Error retrieving Telegram data.';
@@ -136,10 +131,9 @@ app.get("/demo", (req, res) => {
       </body>
     </html>
   `;
-
   res.send(htmlContent);
 });
- 
+
  
 app.get("/error", (req, res) => {
   res.send("<h1>Authentication Failed</h1>");
